@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace JaIoC
 {
     public class IoCContainerBuilder
-        : IIoCContainerBuilderWithResult<IoCContainer>
+        : IIoCContainerBuilder
     {
         private enum State
         {
@@ -44,7 +44,7 @@ namespace JaIoC
             var iocKey = new IoCEntryKey(typeof(T), _key);
 
             if (_registrations.ContainsKey(iocKey))
-                throw new ObjectFactoryIsAlreadyRegisteredException();
+                throw new ObjectFactoryIsAlreadyRegisteredException(typeof(T), _key);
             
             _registrations.Add(iocKey, factory);
 

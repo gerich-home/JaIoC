@@ -33,15 +33,20 @@ namespace JaIoc.UnitTests
         {
             const int n = 3;
 
-            var iocBuilder = CreateIoCContainerBuilder();
+            var iocBuilder = new IoCContainerBuilder();
 
-            var accessInfo = RegisterClassFactoryAsAnInterfaceFactory<A, IA>(iocBuilder);
+            int calls = 0;
+            A lastA = null;
+
+            iocBuilder.Register<IA>((c) =>
+            {
+                calls++;
+                lastA = new A();
+                return lastA;
+            }); 
             iocBuilder.Finish();
 
             var ioc = iocBuilder.Result;
-
-
-            AssertFactoryWasNotAccessed(accessInfo);
 
             for (int i = 1; i <= n; i++)
             {
@@ -50,33 +55,6 @@ namespace JaIoc.UnitTests
                 Assert.AreEqual<int>(i, calls);
                 Assert.AreSame(a, lastA);
             }
-        }
-
-        private static void AssertFactoryWasNotAccessed<T>(Func<Tuple<int, T>> accessInfo)
-        {
-            Assert.AreEqual(0, accessInfo().Item1);
-        }
-
-        private static Func<Tuple<int, TClass>> RegisterClassFactoryAsAnInterfaceFactory<TClass, TInterface>(IoCContainerBuilder iocBuilder)
-            where TClass : class, TInterface, new()
-            where TInterface: class
-        {
-            int calls = 0;
-            TClass lastInstance = null;
-
-            iocBuilder.Register<TInterface>((c) =>
-            {
-                calls++;
-                lastInstance = new TClass();
-                return lastInstance;
-            });
-
-            return () => Tuple.Create(calls, lastInstance);
-        }
-
-        private static IoCContainerBuilder CreateIoCContainerBuilder()
-        {
-            return new IoCContainerBuilder();
         }
 
         [TestMethod]
@@ -91,14 +69,12 @@ namespace JaIoc.UnitTests
                 return new A();
             });
 
-            iocBuilder.Register<IA>((c) =>
+            AssertUtils.ShouldThrow<ObjectFactoryIsAlreadyRegisteredException>(() => iocBuilder.Register<IA>((c) =>
             {
                 calls++;
                 return new A();
-            });
+            }));
 
-            AssertUtils.ShouldThrow<ObjectFactoryIsAlreadyRegisteredException>(iocBuilder.Finish);
-            
             Assert.AreEqual(0, calls);
         }
 
@@ -109,7 +85,7 @@ namespace JaIoc.UnitTests
 
             ioc.Finish();
 
-            AssertUtils.ShouldThrow<ObjectFactoryIsAlreadyRegisteredException>(() => ioc.Result.Resolve<IA>());
+            AssertUtils.ShouldThrow<ObjectFactoryIsNotRegisteredException>(() => ioc.Result.Resolve<IA>());
         }
 
         [TestMethod]

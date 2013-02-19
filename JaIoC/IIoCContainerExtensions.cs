@@ -3,34 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JaIoC;
 
 namespace JaIoC
 {
     public static class IIoCContainerExtensions
     {
-        public static T Resolve<T>(this IIoCContainer c, object key = null)
+        public static T Resolve<T>(this IIoCContainer ioc, object key = null)
             where T : class
         {
-            var session = c.Start();
+            var session = ioc.Start();
             return session.Resolve<T>(key);
         }
 
-        public static T Resolve<T>(this IIoCSession c, object key = null)
+        public static T Resolve<T>(this IIoCSession session, object key = null)
             where T : class
         {
-            var factory = c.FactoryFor<T>(key);
+            var factory = session.FactoryFor<T>(key);
             return factory();
         }
 
-        public static void RegisterInstance<T>(this IIoCContainerBuilderForKey c, Func<IIoCSession, T> factory)
+        public static void RegisterInstance<T>(this IIoCContainerBuilderForKey ioc, Func<IIoCSession, T> factory)
             where T : class
         {
             T instance = null;
-            c.Register(x => instance ?? (instance = factory(x)));
+            ioc.Register(session => instance ?? (instance = factory(session)));
         }
 
-        private static Func<object> GetFactoryForParameter(IIoCSession ioc, Type parameterType)
+        private static Func<object> GetFactoryForParameter(IIoCSession session, Type parameterType)
         {
             var parameterTypeArray = new[] { parameterType };
 
@@ -40,14 +39,14 @@ namespace JaIoC
 
             var returnType = typeof(Func<>).MakeGenericType(parameterTypeArray);
             var delegateType = typeof(Func<,>).MakeGenericType(new[] { typeof(object), returnType });
-            var iocFactoryForParameterType = (Func<object, Func<object>>)Delegate.CreateDelegate(delegateType, ioc, iocFactoryForParameterTypeMethodInfo);
+            var iocFactoryForParameterType = (Func<object, Func<object>>)Delegate.CreateDelegate(delegateType, session, iocFactoryForParameterTypeMethodInfo);
 
             return iocFactoryForParameterType(null);
         }
 
-        public static void RegisterType<T, TImplementation>(this IIoCContainerBuilderForKey c)
+        public static void RegisterType<T, TImplementation>(this IIoCContainerBuilderForKey ioc)
             where T : class
-            where TImplementation : T
+            where TImplementation : T, new()
         {
             if (typeof(TImplementation).IsAbstract)
             {
@@ -59,7 +58,7 @@ namespace JaIoC
                 throw new ArgumentException("TImplementation should define at least one public constructor");
             }
 
-            c.Register(x =>
+            ioc.Register(session =>
             {
                 var constructors = typeof(TImplementation).GetConstructors();
                 var caughtExceptions = new Dictionary<ConstructorInfo, IoCException>();
@@ -76,7 +75,7 @@ namespace JaIoC
                     {
                         try
                         {
-                            var factory = GetFactoryForParameter(x, parameters[i].ParameterType);
+                            var factory = GetFactoryForParameter(session, parameters[i].ParameterType);
                             factories[i] = factory;
 
                         }
@@ -84,7 +83,7 @@ namespace JaIoC
                         {
                             if (constructors.Length == 1)
                             {
-                                throw new ParameterNotResolvedException(constructor, i, e, typeof(TImplementation), c.Key);
+                                throw new ParameterNotResolvedException(constructor, i, e, typeof(TImplementation), ioc.Key);
                             }
 
                             caughtExceptions.Add(constructor, e);
@@ -98,19 +97,19 @@ namespace JaIoC
                     }
                 }
 
-                throw new NoAppropriateContructorException(typeof(TImplementation), c.Key, caughtExceptions);
+                throw new NoAppropriateConstructorException(typeof(TImplementation), ioc.Key, caughtExceptions);
             });
         }
 
-        public static void RegisterType<T>(this IIoCContainerBuilderForKey c)
-            where T : class
+        public static void RegisterType<T>(this IIoCContainerBuilderForKey ioc)
+            where T : class, new()
         {
-            RegisterType<T, T>(c);
+            RegisterType<T, T>(ioc);
         }
 
-        public static void RegisterConstructor<T, TImplementation>(this IIoCContainerBuilderForKey c, Expression<Func<IIoCSession, TImplementation>> constructorExpression)
+        public static void RegisterConstructor<T, TImplementation>(this IIoCContainerBuilderForKey ioc, Expression<Func<IIoCSession, TImplementation>> constructorExpression)
             where T : class
-            where TImplementation : T
+            where TImplementation : T, new()
         {
             if (constructorExpression.NodeType != ExpressionType.Lambda)
                 throw new ArgumentException("constructorExpression");
@@ -122,7 +121,7 @@ namespace JaIoC
             if (newExpression == null)
                 throw new ArgumentException("constructorExpression");
 
-            c.Register(x =>
+            ioc.Register(session =>
             {
                 var constructor = newExpression.Constructor;
                 var parameters = constructor.GetParameters();
@@ -144,7 +143,7 @@ namespace JaIoC
                                     {
                                         if (constantExpression.Value == null)
                                         {
-                                            var factory = GetFactoryForParameter(x, parameters[i].ParameterType);
+                                            var factory = GetFactoryForParameter(session, parameters[i].ParameterType);
                                             factories[i] = factory;
                                             continue;
                                         }
@@ -158,7 +157,7 @@ namespace JaIoC
                                     if (SetterValueExpression(constructorArgument, parameters[i].ParameterType, out lambda))
                                     {
                                         var factory = lambda.Compile();
-                                        factories[i] = () => factory(x);
+                                        factories[i] = () => factory(session);
                                         continue;
                                     }
                                 }
@@ -173,7 +172,7 @@ namespace JaIoC
                                         if (SetterValueExpression(convertExpression.Operand, parameters[i].ParameterType, out lambda))
                                         {
                                             var factory = lambda.Compile();
-                                            factories[i] = () => factory(x);
+                                            factories[i] = () => factory(session);
                                             continue;
                                         }
                                     }
@@ -183,20 +182,20 @@ namespace JaIoC
                     }
                     catch (IoCException e)
                     {
-                        throw new ParameterNotResolvedException(constructor, i, e, typeof(TImplementation), c.Key);
+                        throw new ParameterNotResolvedException(constructor, i, e, typeof(TImplementation), ioc.Key);
                     }
 
-                    throw new ParameterNotResolvedException(constructor, i, null, typeof(TImplementation), c.Key);
+                    throw new ParameterNotResolvedException(constructor, i, null, typeof(TImplementation), ioc.Key);
                 }
 
                 return constructor.Invoke(factories.Select(f => f()).ToArray()) as T;
             });
         }
 
-        public static void RegisterConstructor<T>(this IIoCContainerBuilderForKey c, Expression<Func<IIoCSession, T>> constructorExpression)
-            where T : class
+        public static void RegisterConstructor<T>(this IIoCContainerBuilderForKey ioc, Expression<Func<IIoCSession, T>> constructorExpression)
+            where T : class, new()
         {
-            RegisterConstructor<T, T>(c, constructorExpression);
+            RegisterConstructor<T, T>(ioc, constructorExpression);
         }
 
         private static bool SetterValueExpression(Expression expression, Type targetType, out Expression<Func<IIoCSession, object>> lambda)

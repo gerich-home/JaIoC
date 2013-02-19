@@ -33,19 +33,18 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IFluentInterface.cs" />
     <Compile Include="IIoCContainerBuilder.cs" />
     <Compile Include="IIoCContainerBuilderForKey.cs" />
-    <Compile Include="IIoCContainerBuilderWithResult.cs" />
     <Compile Include="IIoCContainer.cs" />
     <Compile Include="IIoCSession.cs" />
+    <Compile Include="IoCException.cs" />
+    <Compile Include="ObjectFactoryCycleDependencyDetected.cs" />
+    <Compile Include="ObjectFactoryIsAlreadyRegisteredException.cs" />
+    <Compile Include="ObjectFactoryIsAmbiguosException.cs" />
+    <Compile Include="ObjectFactoryIsNotRegisteredException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

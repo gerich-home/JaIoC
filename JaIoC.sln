@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaIoC.Core", "JaIoC.Core\Ja
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaIoC.UnitTests", "JaIoC.UnitTests\JaIoC.UnitTests.csproj", "{CC48D8C2-513D-406A-8DD4-F7440CF44D96}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApplication", "SampleApplication\SampleApplication.csproj", "{E093AEBE-8031-4FB3-97F5-7046F33E815D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{CC48D8C2-513D-406A-8DD4-F7440CF44D96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC48D8C2-513D-406A-8DD4-F7440CF44D96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC48D8C2-513D-406A-8DD4-F7440CF44D96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E093AEBE-8031-4FB3-97F5-7046F33E815D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E093AEBE-8031-4FB3-97F5-7046F33E815D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E093AEBE-8031-4FB3-97F5-7046F33E815D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E093AEBE-8031-4FB3-97F5-7046F33E815D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
